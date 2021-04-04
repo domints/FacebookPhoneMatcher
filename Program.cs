@@ -24,8 +24,9 @@ namespace NumberFinder
 
             var contactsCsv = File.ReadAllLines(args[1])
                 .Select(s => s.Split(","))
-                .DistinctBy(s => NormalizeNumber(s[34], args[0]))
-                .ToDictionary(s => NormalizeNumber(s[34], args[0]), s => s[0]);
+                .SelectMany(s => GetPhoneEntries(s, args[0]))
+                .DistinctBy(s => s.phoneNumber)
+                .ToDictionary(s => s.phoneNumber, s => s.name);
 
             if (!File.Exists(args[2]))
             {
@@ -46,6 +47,22 @@ namespace NumberFinder
             }
         }
 
+        private static IEnumerable<(string phoneNumber, string name)> GetPhoneEntries(string[] row, string countryCode)
+        {
+            var result = new List<(string phoneNumber, string name)>();
+
+            var number1 = NormalizeNumber(row[34], countryCode);
+            var number2 = NormalizeNumber(row[36], countryCode);
+
+            if(!string.IsNullOrWhiteSpace(number1))
+                result.Add((number1, row[0]));
+
+            if(!string.IsNullOrWhiteSpace(number2))
+                result.Add((number2, row[0]));
+
+            return result;
+        }
+
         private static void PrintUsage()
         {
             Console.WriteLine("You need three args: country code, contacts file name and leak file name!");
@@ -56,10 +73,10 @@ namespace NumberFinder
 
         private static string NormalizeNumber(this string number, string countryCode)
         {
-            var clean = number.Replace(" ", "").Replace("-", "").Replace("+", "");
+            var clean = number.Trim().Replace(" ", "").Replace("-", "").Replace("+", "");
             while (clean.StartsWith("0"))
                 clean = clean[1..];
-            if (!clean.StartsWith(countryCode))
+            if (!clean.StartsWith(countryCode) && !string.IsNullOrWhiteSpace(clean))
                 clean = countryCode + clean;
             return clean;
         }
