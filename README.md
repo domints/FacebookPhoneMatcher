@@ -4,7 +4,7 @@ Simple .NET Core app matching Google CSV with your contacts to data from recent 
 Google CSV can be obtained easily if you store your phonebook on Google Account, by going to https://contacts.google.com/ and clicking Export.
 As for the leak, well, it's up to you :)
 
-App matches only first phone number for given contact from that list, that might change.
+App matches ~~only first phone number for given contact from that list, that might change~~ both numbers present in contacts.csv. Adding that functionality gave me extra 25% results!
 It also doesn't like multiline CSV rows (it's meant to be simple!) so you might want to go through your CSV looking for `"` char and replacing new lines, e.g. in addresses with something nice, like spaces.
 That also might change in the future (if somebody will implement better CSV parsing, or I will have enough will to do this).
 
