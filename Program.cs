@@ -33,14 +33,15 @@ namespace NumberFinder
                 PrintUsage();
                 return;
             }
+
             StreamReader facebook = new(args[2]);
             string line;
             while ((line = facebook.ReadLine()) != null)
             {
-                var record = line.Split(":");
-                if (contactsCsv.ContainsKey(record[0]))
+                var record = new FacebookLeakRecord(line);
+                if (contactsCsv.ContainsKey(record.PhoneNumber))
                 {
-                    Console.WriteLine($"{contactsCsv[record[0]]}, {record[0]}, {record[2]} {record[3]}");
+                    Console.WriteLine($"{contactsCsv[record.PhoneNumber]}, {record.PhoneNumber}, {record.Name} {record.Surname}");
                 }
             }
         }
@@ -73,6 +74,42 @@ namespace NumberFinder
                     yield return element;
                 }
             }
+        }
+    }
+
+    public class FacebookLeakRecord
+    {
+        public string PhoneNumber { get; set; }
+        public string UserId { get; set; }
+        public string Name { get; set; }
+        public string Surname { get; set; }
+        public string Gender { get; set; }
+        public string LivingIn { get; set; }
+        public string ComingFrom { get; set; }
+        public string RelationshipStatus { get; set; }
+        public string Workplace { get; set; }
+        public string EmailAddress { get; set; }
+        public string BirthDate { get; set; }
+        public FacebookLeakRecord(string row)
+        {
+            var record = row.Split(":");
+            PhoneNumber = record[0];
+            UserId = record[1];
+            Name = record[2];
+            Surname = record[3];
+            Gender = record[4];
+            LivingIn = record[5];
+            ComingFrom = record[6];
+            RelationshipStatus = record[7];
+            Workplace = record[8];
+            // Some date
+            EmailAddress = record[10];
+            BirthDate = record[11];
+            // year. Graduation?
+            // bool
+            // bool
+            // date
+            // date
         }
     }
 }
