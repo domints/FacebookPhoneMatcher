@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace NumberFinder
 {
@@ -12,6 +13,24 @@ namespace NumberFinder
             if (args.Length < 3)
             {
                 PrintUsage();
+                return;
+            }
+
+            if (args[0] == "friends")
+            {
+                FindInFriendsCsv(args);
+                return;
+            }
+
+            if (args[0] == "singlePhone")
+            {
+                FindSingle(args, phone: true);
+                return;
+            }
+
+            if (args[0] == "singleId")
+            {
+                FindSingle(args, phone: false);
                 return;
             }
 
@@ -47,6 +66,76 @@ namespace NumberFinder
             }
         }
 
+        private static void FindInFriendsCsv(string[] args)
+        {
+            var friends = File.ReadAllLines(args[1])
+                .Where(l => !string.IsNullOrWhiteSpace(l))
+                .Select(l => l.Split(";"))
+                .Select(l => new {UserId = l[0], UserName = l[1], FullName = l[2]})
+                .DistinctBy(l => l.UserId)
+                .ToDictionary(l => l.UserId);
+            
+            StreamReader facebook = new(args[2]);
+            string line;
+            while ((line = facebook.ReadLine()) != null)
+            {
+                var record = new FacebookLeakRecord(line);
+                if (friends.ContainsKey(record.UserId))
+                {
+                    var friend = friends[record.UserId];
+                    //Console.WriteLine($"{friend.FullName}, {record.PhoneNumber}, {record.Name} {record.Surname}");
+
+                    Console.WriteLine($"Phone number: {record.PhoneNumber}");
+                    Console.WriteLine($"UserId: {record.UserId}");
+                    Console.WriteLine($"Name: {record.Name} {record.Surname}");
+                    Console.WriteLine($"E-mail: {record.EmailAddress}");
+                    Console.WriteLine($"Birthdate: {record.BirthDate}");
+                    Console.WriteLine($"Gender: {record.Gender}");
+                    Console.WriteLine($"Workplace: {record.Workplace}");
+                    Console.WriteLine($"Living in: {record.LivingIn}");
+                    Console.WriteLine($"Coming from: {record.ComingFrom}");
+                    Console.WriteLine($"Relationship status: {record.RelationshipStatus}");
+
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
+            }
+        }
+
+        private static void FindSingle(string[] args, bool phone = false)
+        {
+            string checkValue = args[1];
+            if(phone)
+                checkValue = NormalizeNumber(args[1]);
+
+            var found = false;
+            StreamReader facebook = new(args[2]);
+            string line;
+            while ((line = facebook.ReadLine()) != null)
+            {
+                var record = new FacebookLeakRecord(line);
+                if (phone ? record.PhoneNumber == checkValue : record.UserId == checkValue)
+                {
+                    found = true;
+                    Console.WriteLine($"Phone number: {record.PhoneNumber}");
+                    Console.WriteLine($"UserId: {record.UserId}");
+                    Console.WriteLine($"Name: {record.Name} {record.Surname}");
+                    Console.WriteLine($"E-mail: {record.EmailAddress}");
+                    Console.WriteLine($"Birthdate: {record.BirthDate}");
+                    Console.WriteLine($"Gender: {record.Gender}");
+                    Console.WriteLine($"Workplace: {record.Workplace}");
+                    Console.WriteLine($"Living in: {record.LivingIn}");
+                    Console.WriteLine($"Coming from: {record.ComingFrom}");
+                    Console.WriteLine($"Relationship status: {record.RelationshipStatus}");
+                    return;
+                }
+            }
+            if (!found)
+            {
+                Console.WriteLine("No such data found.");
+            }
+        }
+
         private static IEnumerable<(string phoneNumber, string name)> GetPhoneEntries(string[] row, string countryCode)
         {
             var result = new List<(string phoneNumber, string name)>();
@@ -71,13 +160,17 @@ namespace NumberFinder
             Console.WriteLine("contacts.csv is contacts exported from Google Contacts, as Google CSV.");
         }
 
-        private static string NormalizeNumber(this string number, string countryCode)
+        private static string NormalizeNumber(this string number, string countryCode = null)
         {
             var clean = number.Trim().Replace(" ", "").Replace("-", "").Replace("+", "");
             while (clean.StartsWith("0"))
                 clean = clean[1..];
-            if (!clean.StartsWith(countryCode) && !string.IsNullOrWhiteSpace(clean))
-                clean = countryCode + clean;
+            if (!string.IsNullOrWhiteSpace(countryCode))
+            {
+                if (!clean.StartsWith(countryCode) && !string.IsNullOrWhiteSpace(clean))
+                    clean = countryCode + clean;
+            }
+
             return clean;
         }
 
